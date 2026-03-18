@@ -1,0 +1,64 @@
+workflows:
+  ios-workflow:
+    name: iOS Build
+    max_build_duration: 60
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mediaedit.app
+      vars:
+        FLUTTER_VERSION: 3.19.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Set up Flutter
+        script: |
+          git clone https://github.com/flutter/flutter.git -b stable --depth 1
+          echo "export PATH=`pwd`/flutter/bin:\$PATH" >> $HOME/.bashrc
+          source $HOME/.bashrc
+          flutter doctor
+      - name: Get dependencies
+        script: |
+          cd frontend
+          flutter pub get
+      - name: Build iOS
+        script: |
+          cd frontend
+          flutter build ios --release --no-codesign
+    artifacts:
+      - frontend/build/ios/iphoneos/*.app
+    publishing:
+      email:
+        recipients:
+          - 3074148703@qq.com
+
+  android-workflow:
+    name: Android Build
+    max_build_duration: 60
+    environment:
+      vars:
+        FLUTTER_VERSION: 3.19.0
+      android_signing:
+        - keystore_reference: keystore
+      java: 17
+    scripts:
+      - name: Set up Flutter
+        script: |
+          git clone https://github.com/flutter/flutter.git -b stable --depth 1
+          echo "export PATH=`pwd`/flutter/bin:\$PATH" >> $HOME/.bashrc
+          source $HOME/.bashrc
+          flutter doctor
+      - name: Get dependencies
+        script: |
+          cd frontend
+          flutter pub get
+      - name: Build Android
+        script: |
+          cd frontend
+          flutter build apk --release
+    artifacts:
+      - frontend/build/app/outputs/flutter-apk/*.apk
+    publishing:
+      email:
+        recipients:
+          - 3074148703@qq.com

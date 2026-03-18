@@ -1,0 +1,71 @@
+name: Build iOS and Android
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          
+      - name: Get dependencies
+        working-directory: frontend
+        run: flutter pub get
+        
+      - name: Build APK
+        working-directory: frontend
+        run: flutter build apk --release
+        
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: frontend/build/app/outputs/flutter-apk/app-release.apk
+
+  build-ios:
+    name: Build iOS (No Codesign)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          
+      - name: Get dependencies
+        working-directory: frontend
+        run: flutter pub get
+        
+      - name: Build iOS (No Codesign)
+        working-directory: frontend
+        run: flutter build ios --release --no-codesign
+        
+      - name: Create iOS Archive
+        working-directory: frontend/build/ios/iphoneos
+        run: zip -r ../../../Runner.app.zip Runner.app
+        
+      - name: Upload iOS App
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app
+          path: frontend/Runner.app.zip
