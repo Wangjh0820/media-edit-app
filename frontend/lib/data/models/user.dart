@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 class User {
   final int id;
@@ -48,8 +49,6 @@ class User {
   }
 
   String get displayName => nickname ?? username;
-
-  double get storagePercentage => storageUsed / storageLimit;
 }
 
 class AuthResponse {
@@ -131,50 +130,6 @@ class MediaFile {
   }
 }
 
-class EditProject {
-  final int id;
-  final int userId;
-  final String name;
-  final String? description;
-  final String projectType;
-  final String? projectData;
-  final String? thumbnailPath;
-  final String? outputPath;
-  final bool isCompleted;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  EditProject({
-    required this.id,
-    required this.userId,
-    required this.name,
-    this.description,
-    required this.projectType,
-    this.projectData,
-    this.thumbnailPath,
-    this.outputPath,
-    this.isCompleted = false,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory EditProject.fromJson(Map<String, dynamic> json) {
-    return EditProject(
-      id: json['id'],
-      userId: json['userId'],
-      name: json['name'],
-      description: json['description'],
-      projectType: json['projectType'],
-      projectData: json['projectData'],
-      thumbnailPath: json['thumbnailPath'],
-      outputPath: json['outputPath'],
-      isCompleted: json['isCompleted'] ?? false,
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
-    );
-  }
-}
-
 class ApiResponse<T> {
   final bool success;
   final String message;
@@ -188,8 +143,8 @@ class ApiResponse<T> {
 
   factory ApiResponse.fromJson(Map<String, dynamic> json, T Function(dynamic)? fromJsonT) {
     return ApiResponse(
-      success: json['success'],
-      message: json['message'],
+      success: json['success'] ?? true,
+      message: json['message'] ?? '',
       data: fromJsonT != null && json['data'] != null ? fromJsonT(json['data']) : json['data'],
     );
   }

@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../data/models/user.dart';
-import '../../data/repositories/media_repository.dart';
+import '../../../data/models/user.dart';
+import '../../../data/repositories/media_repository.dart';
 
 abstract class MediaEvent extends Equatable {
   const MediaEvent();

@@ -1,5 +1,5 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class StorageService {
   static const String _tokenKey = 'auth_token';
@@ -7,7 +7,6 @@ class StorageService {
   static const String _themeKey = 'theme_mode';
   static const String _languageKey = 'language_code';
   
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   late SharedPreferences _prefs;
   
   Future<void> init() async {
@@ -15,15 +14,15 @@ class StorageService {
   }
   
   Future<void> saveToken(String token) async {
-    await _secureStorage.write(key: _tokenKey, value: token);
+    await _prefs.setString(_tokenKey, token);
   }
   
   Future<String?> getToken() async {
-    return await _secureStorage.read(key: _tokenKey);
+    return _prefs.getString(_tokenKey);
   }
   
   Future<void> deleteToken() async {
-    await _secureStorage.delete(key: _tokenKey);
+    await _prefs.remove(_tokenKey);
   }
   
   Future<void> saveUserId(int userId) async {
@@ -51,7 +50,6 @@ class StorageService {
   }
   
   Future<void> clearAll() async {
-    await _secureStorage.deleteAll();
     await _prefs.clear();
   }
   

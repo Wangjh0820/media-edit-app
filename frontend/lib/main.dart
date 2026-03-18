@@ -12,6 +12,9 @@ import 'presentation/bloc/auth/auth_bloc.dart';
 import 'presentation/bloc/media/media_bloc.dart';
 import 'presentation/screens/main_screen.dart';
 import 'presentation/pages/auth/login_page.dart';
+import 'presentation/pages/auth/register_page.dart';
+import 'presentation/pages/editor/image_editor_screen.dart';
+import 'presentation/pages/editor/video_editor_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,19 +31,22 @@ void main() async {
     ),
   );
   
-  runApp(const MediaEditApp());
+  final storageService = StorageService();
+  await storageService.init();
+  
+  runApp(MediaEditApp(storageService: storageService));
 }
 
 class MediaEditApp extends StatelessWidget {
-  const MediaEditApp({super.key});
+  final StorageService storageService;
+  
+  const MediaEditApp({super.key, required this.storageService});
 
   @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<StorageService>(
-          create: (_) => StorageService(),
-        ),
+        RepositoryProvider<StorageService>.value(value: storageService),
         RepositoryProvider<ApiService>(
           create: (_) => ApiService(AppConfig.baseUrl),
         ),
@@ -84,7 +90,18 @@ class MediaEditApp extends StatelessWidget {
             Locale('zh', 'CN'),
             Locale('en', 'US'),
           ],
-          home: BlocBuilder<AuthBloc, AuthState>(
+          onGenerateRoute: _generateRoute,
+          initialRoute: '/',
+        ),
+      ),
+    );
+  }
+
+  static Route<dynamic> _generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case '/':
+        return MaterialPageRoute(
+          builder: (_) => BlocBuilder<AuthBloc, AuthState>(
             builder: (context, state) {
               if (state is AuthAuthenticated) {
                 return const MainScreen();
@@ -94,9 +111,35 @@ class MediaEditApp extends StatelessWidget {
               return const SplashScreen();
             },
           ),
-        ),
-      ),
-    );
+        );
+      case '/login':
+        return MaterialPageRoute(builder: (_) => const LoginPage());
+      case '/register':
+        return MaterialPageRoute(builder: (_) => const RegisterPage());
+      case '/home':
+        return MaterialPageRoute(builder: (_) => const MainScreen());
+      case '/editor':
+        return MaterialPageRoute(builder: (_) => const MainScreen());
+      case '/editor/image':
+        final args = settings.arguments as String?;
+        return MaterialPageRoute(
+          builder: (_) => ImageEditorScreen(imagePath: args),
+        );
+      case '/editor/video':
+        final args = settings.arguments as String?;
+        return MaterialPageRoute(
+          builder: (_) => VideoEditorScreen(videoPath: args),
+        );
+      default:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('错误')),
+            body: Center(
+              child: Text('未找到路由: ${settings.name}'),
+            ),
+          ),
+        );
+    }
   }
 }
 

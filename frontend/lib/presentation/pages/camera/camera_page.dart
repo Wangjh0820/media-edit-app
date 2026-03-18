@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
@@ -10,158 +10,8 @@ class CameraPage extends StatefulWidget {
 }
 
 class _CameraPageState extends State<CameraPage> {
-  CameraController? _controller;
-  List<CameraDescription>? _cameras;
-  bool _isInitialized = false;
+  final ImagePicker _picker = ImagePicker();
   bool _isRecording = false;
-  FlashMode _flashMode = FlashMode.auto;
-  int _currentCameraIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _initCamera();
-  }
-
-  Future<void> _initCamera() async {
-    final status = await Permission.camera.request();
-    if (!status.isGranted) {
-      _showPermissionDialog();
-      return;
-    }
-
-    _cameras = await availableCameras();
-    if (_cameras != null && _cameras!.isNotEmpty) {
-      _controller = CameraController(
-        _cameras![_currentCameraIndex],
-        ResolutionPreset.veryHigh,
-        enableAudio: true,
-        imageFormatGroup: ImageFormatGroup.jpeg,
-      );
-
-      await _controller!.initialize();
-      setState(() {
-        _isInitialized = true;
-      });
-    }
-  }
-
-  void _showPermissionDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('需要相机权限'),
-        content: const Text('请在设置中开启相机权限以使用拍照功能'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              openAppSettings();
-              Navigator.pop(context);
-            },
-            child: const Text('去设置'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  Future<void> _takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-
-    try {
-      final image = await _controller!.takePicture();
-      if (mounted) {
-        Navigator.pushNamed(context, '/editor/image', arguments: image.path);
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('拍照失败: $e')),
-      );
-    }
-  }
-
-  Future<void> _toggleRecording() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-
-    if (_isRecording) {
-      final video = await _controller!.stopVideoRecording();
-      setState(() {
-        _isRecording = false;
-      });
-      if (mounted) {
-        Navigator.pushNamed(context, '/editor/video', arguments: video.path);
-      }
-    } else {
-      await _controller!.startVideoRecording();
-      setState(() {
-        _isRecording = true;
-      });
-    }
-  }
-
-  void _switchCamera() {
-    if (_cameras == null || _cameras!.length < 2) return;
-
-    _currentCameraIndex = (_currentCameraIndex + 1) % _cameras!.length;
-    _controller?.dispose();
-
-    _controller = CameraController(
-      _cameras![_currentCameraIndex],
-      ResolutionPreset.veryHigh,
-      enableAudio: true,
-    );
-
-    _controller!.initialize().then((_) {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-  }
-
-  void _toggleFlash() {
-    if (_controller == null) return;
-
-    setState(() {
-      switch (_flashMode) {
-        case FlashMode.auto:
-          _flashMode = FlashMode.always;
-          break;
-        case FlashMode.always:
-          _flashMode = FlashMode.torch;
-          break;
-        case FlashMode.torch:
-          _flashMode = FlashMode.off;
-          break;
-        case FlashMode.off:
-          _flashMode = FlashMode.auto;
-          break;
-      }
-    });
-    _controller!.setFlashMode(_flashMode);
-  }
-
-  IconData _getFlashIcon() {
-    switch (_flashMode) {
-      case FlashMode.auto:
-        return Icons.flash_auto;
-      case FlashMode.always:
-        return Icons.flash_on;
-      case FlashMode.torch:
-        return Icons.flashlight_on;
-      case FlashMode.off:
-        return Icons.flash_off;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,14 +19,18 @@ class _CameraPageState extends State<CameraPage> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (_isInitialized && _controller != null)
-            Positioned.fill(
-              child: CameraPreview(_controller!),
-            )
-          else
-            const Center(
-              child: CircularProgressIndicator(color: Colors.white),
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.grey.shade900,
+                  Colors.black,
+                ],
+              ),
             ),
+          ),
           SafeArea(
             child: Column(
               children: [
@@ -192,8 +46,8 @@ class _CameraPageState extends State<CameraPage> {
                       Row(
                         children: [
                           IconButton(
-                            onPressed: _toggleFlash,
-                            icon: Icon(_getFlashIcon(), color: Colors.white, size: 28),
+                            onPressed: () {},
+                            icon: const Icon(Icons.flash_auto, color: Colors.white, size: 28),
                           ),
                           const SizedBox(width: 16),
                           IconButton(
@@ -205,7 +59,36 @@ class _CameraPageState extends State<CameraPage> {
                     ],
                   ),
                 ),
-                const Spacer(),
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      constraints: const BoxConstraints(maxWidth: 400, maxHeight: 500),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade800,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white24, width: 2),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.camera_alt_outlined,
+                            size: 80,
+                            color: Colors.white.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            '点击下方按钮拍照',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -230,12 +113,7 @@ class _CameraPageState extends State<CameraPage> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           GestureDetector(
-                            onTap: () async {
-                              final image = await _pickFromGallery();
-                              if (image != null && mounted) {
-                                Navigator.pushNamed(context, '/editor/image', arguments: image);
-                              }
-                            },
+                            onTap: _pickFromGallery,
                             child: Container(
                               width: 50,
                               height: 50,
@@ -248,7 +126,6 @@ class _CameraPageState extends State<CameraPage> {
                           ),
                           GestureDetector(
                             onTap: _takePicture,
-                            onLongPress: _toggleRecording,
                             child: Container(
                               width: 80,
                               height: 80,
@@ -271,7 +148,7 @@ class _CameraPageState extends State<CameraPage> {
                             ),
                           ),
                           IconButton(
-                            onPressed: _switchCamera,
+                            onPressed: () {},
                             icon: const Icon(Icons.flip_camera_ios, color: Colors.white, size: 32),
                           ),
                         ],
@@ -336,8 +213,42 @@ class _CameraPageState extends State<CameraPage> {
     );
   }
 
-  Future<String?> _pickFromGallery() async {
-    return null;
+  Future<void> _takePicture() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      
+      if (image != null && mounted) {
+        Navigator.pushNamed(context, '/editor/image', arguments: image.path);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('拍照失败: $e')),
+      );
+    }
+  }
+
+  Future<void> _pickFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
+      );
+      
+      if (image != null && mounted) {
+        Navigator.pushNamed(context, '/editor/image', arguments: image.path);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('选择图片失败: $e')),
+      );
+    }
   }
 
   void _showAIPoseGuide() {

@@ -4,7 +4,9 @@ import com.mediaedit.entity.MediaFile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -15,8 +17,10 @@ public interface MediaFileRepository extends JpaRepository<MediaFile, Long> {
     
     List<MediaFile> findByUserIdAndFileTypeAndIsDeletedFalse(Long userId, String fileType);
     
-    @Query("SELECT SUM(m.fileSize) FROM MediaFile m WHERE m.userId = ?1 AND m.isDeleted = false")
-    Long getTotalStorageUsed(Long userId);
+    @Query("SELECT SUM(m.fileSize) FROM MediaFile m WHERE m.userId = :userId AND m.isDeleted = false")
+    Long getTotalStorageUsed(@Param("userId") Long userId);
     
-    void softDeleteByUserIdAndId(Long userId, Long id);
+    @Modifying
+    @Query("UPDATE MediaFile m SET m.isDeleted = true WHERE m.userId = :userId AND m.id = :id")
+    void softDeleteByUserIdAndId(@Param("userId") Long userId, @Param("id") Long id);
 }
