@@ -25,14 +25,17 @@ jobs:
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
+          cache: true
           
       - name: Get dependencies
-        working-directory: frontend
-        run: flutter pub get
+        run: |
+          cd frontend
+          flutter pub get
         
       - name: Build APK
-        working-directory: frontend
-        run: flutter build apk --release
+        run: |
+          cd frontend
+          flutter build apk --release
         
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -41,7 +44,7 @@ jobs:
           path: frontend/build/app/outputs/flutter-apk/app-release.apk
 
   build-ios:
-    name: Build iOS (No Codesign)
+    name: Build iOS
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,18 +54,22 @@ jobs:
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
+          cache: true
           
       - name: Get dependencies
-        working-directory: frontend
-        run: flutter pub get
+        run: |
+          cd frontend
+          flutter pub get
         
       - name: Build iOS (No Codesign)
-        working-directory: frontend
-        run: flutter build ios --release --no-codesign
+        run: |
+          cd frontend
+          flutter build ios --release --no-codesign
         
       - name: Create iOS Archive
-        working-directory: frontend/build/ios/iphoneos
-        run: zip -r ../../../Runner.app.zip Runner.app
+        run: |
+          cd frontend/build/ios/iphoneos
+          zip -r ../../../Runner.app.zip Runner.app
         
       - name: Upload iOS App
         uses: actions/upload-artifact@v4
