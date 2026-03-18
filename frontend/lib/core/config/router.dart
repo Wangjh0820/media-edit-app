@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../presentation/screens/main_screen.dart';
-import '../presentation/pages/auth/login_page.dart';
-import '../presentation/pages/editor/image_editor_screen.dart';
-import '../presentation/pages/editor/video_editor_screen.dart';
+import 'package:media_edit_app/presentation/screens/main_screen.dart';
+import 'package:media_edit_app/presentation/pages/auth/login_page.dart';
+import 'package:media_edit_app/presentation/pages/editor/image_editor_screen.dart';
+import 'package:media_edit_app/presentation/pages/editor/video_editor_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
